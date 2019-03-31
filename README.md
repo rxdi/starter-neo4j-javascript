@@ -43,8 +43,8 @@ setup({
     Neo4JModule.forRoot({
       types: [UserType],
       password: "your-password",
-      graphName: "neo4j",
-      graphAddress: "bolt://localhost:7687"
+      username: "neo4j",
+      address: "bolt://localhost:7687"
     }),
     VoyagerModule.forRoot()
   ]
