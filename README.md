@@ -7,7 +7,7 @@
 git clone https://github.com/rxdi/starter-neo4js-javascript
 ```
 
-#### Install @gapi command line interface and typescript node
+#### Open cloned repository and install packages
 ```bash
 cd starter-neo4js-javascript && npm i
 ```

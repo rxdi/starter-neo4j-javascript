@@ -1,4 +1,5 @@
 {
+  "name": "@rxdi/starter-neo4j-javascript",
   "scripts": {
     "start": "node index.js"
   },
