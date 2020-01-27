@@ -1,28 +1,29 @@
-const { CoreModule, setup } = require('@gapi/core');
-const { VoyagerModule } = require('@gapi/voyager');
-const { Neo4JModule } = require('@rxdi/neo4j');
-const { GraphQLObjectType, GraphQLString } = require('graphql');
+const { CoreModule, setup } = require("@gapi/core");
+const { VoyagerModule } = require("@gapi/voyager");
+const { Neo4JModule } = require("@rxdi/neo4j");
+const { makeAugmentedSchema } = require("neo4j-graphql-js");
 
-const UserType = new GraphQLObjectType({
-  name: 'User',
-  fields: () => ({
-    id: {
-      type: GraphQLString
-    },
-    name: {
-      type: GraphQLString
-    },
-  })
-});
+const typeDefs = `
+type Movie {
+  title: String
+  year: Int
+  imdbRating: Float
+  genres: [Genre] @relation(name: "IN_GENRE", direction: "OUT")
+}
+type Genre {
+  name: String
+  movies: [Movie] @relation(name: "IN_GENRE", direction: "IN")
+}
+`;
 
 setup({
   imports: [
-    CoreModule.forRoot(),
+    CoreModule.forRoot({ graphql: { initQuery: false } }),
     Neo4JModule.forRoot({
-      types: [UserType],
-      password: 'your-password',
-      username: 'neo4j',
-      address: 'bolt://localhost:7687'
+      schemaOverride: () => makeAugmentedSchema({ typeDefs }),
+      password: "your-password",
+      username: "neo4j",
+      address: "bolt://localhost:7687"
     }),
     VoyagerModule.forRoot()
   ]

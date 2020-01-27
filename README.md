@@ -26,22 +26,26 @@ Open `index.js` and fill configuration
 const { CoreModule, setup } = require("@gapi/core");
 const { VoyagerModule } = require("@gapi/voyager");
 const { Neo4JModule } = require("@rxdi/neo4j");
-const { GraphQLObjectType, GraphQLString } = require("graphql");
+const { makeAugmentedSchema } = require("neo4j-graphql-js");
 
-const UserType = new GraphQLObjectType({
-  name: "User",
-  fields: () => ({
-    name: {
-      type: GraphQLString
-    }
-  })
-});
+const typeDefs = `
+type Movie {
+  title: String
+  year: Int
+  imdbRating: Float
+  genres: [Genre] @relation(name: "IN_GENRE", direction: "OUT")
+}
+type Genre {
+  name: String
+  movies: [Movie] @relation(name: "IN_GENRE", direction: "IN")
+}
+`;
 
 setup({
   imports: [
-    CoreModule.forRoot(),
+    CoreModule.forRoot({ graphql: { initQuery: false } }),
     Neo4JModule.forRoot({
-      types: [UserType],
+      schemaOverride: () => makeAugmentedSchema({ typeDefs }),
       password: "your-password",
       username: "neo4j",
       address: "bolt://localhost:7687"
@@ -49,7 +53,6 @@ setup({
     VoyagerModule.forRoot()
   ]
 }).subscribe();
-
 ```
 
 #### Start the application
@@ -63,43 +66,6 @@ node index.js
 
 
 
-#### Use CRUD operations
-
-```graphql
-mutation mutations {
-  CreateUser(id:"", name:"") {
-    id
-    name
-    _id
-  }
-  DeleteUser(id:"") {
-    id
-    name
-    _id
-  }
-  UpdateUser(id:"", name:"") {
-    id
-    name
-  }
-}
-
-query queries {
-  User(id:"", name:"", first: 10, offset: 20, orderBy:id_asc) {
-    id
-    name
-  }
-}
-```
-
-
-#### Open graphiql DevTools
-```
-http://0.0.0.0:9000/devtools
-```
-
-![dev-tools](https://ipfs.io/ipfs/QmPyMcVqLjyeVVUiYYWmE4PcXh2MvAnKzGhLjdrYVzC9ns)
-
-
 #### Open voyager panel
 
 ```
@@ -108,3 +74,83 @@ http://0.0.0.0:9000/voyager
 
 
 ![voyager](https://ipfs.io/ipfs/QmWNEZANeePQLpY9P7AX4Kz6gwt7Z67NsxJhQy6GmXByo5)
+
+
+#### Open graphiql DevTools
+```
+http://0.0.0.0:9000/devtools
+```
+
+#### Example
+
+1. Create `Movie`
+
+```graphql
+mutation {
+  CreateMovie(title: "Titanic", year: 1990, imdbRating: 1) {
+    title
+    year
+    genres {
+      name
+    }
+  }
+}
+```
+
+2. Create `Genre`
+```graphql
+mutation {
+  CreateGenre(name: "Drama") {
+    name
+    movies {
+      title
+      year
+      imdbRating
+    }
+  }
+}
+```
+
+3. Create `Relationship` between Genre `Drama` and Movie `Titanic`
+
+```graphql
+mutation {
+  AddGenreMovies(from: { title: "Titanic" }, to: { name: "Drama" }) {
+    from {
+      title
+    }
+    to {
+      name
+    }
+  }
+}
+```
+
+4. List Genres
+
+```graphql
+query {
+  Genre {
+    name
+    movies {
+      title
+    }
+  }
+}
+```
+
+5. List Movies
+
+```graphql
+query {
+  Movie {
+    title
+    year
+    genres {
+      name
+    }
+  }
+}
+```
+
+Notice that both objects are linked
